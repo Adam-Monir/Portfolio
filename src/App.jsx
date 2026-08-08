@@ -486,7 +486,7 @@ export default function App() {
               </span>
             </h1>
             <p className="text-gray-400 text-lg mb-8 leading-relaxed max-w-lg">
-              4th-year AI Engineering student at{' '}
+              5th-year AI Engineering student at{' '}
               <span className="text-white underline decoration-[#00ff9d]">
                 Alamein International University
               </span>
