@@ -443,9 +443,11 @@ export default function App() {
                     </span>
                   ))}
                 </div>
-                <ReactMarkdown remarkPlugins={[remarkGfm]} className="markdown-body">
-                  {selectedProject.body}
-                </ReactMarkdown>
+                <div className="markdown-body">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {selectedProject.body}
+                  </ReactMarkdown>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -774,12 +776,11 @@ export default function App() {
               ))}
             </div>
 
-            <motion.div layout className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <AnimatePresence mode="popLayout">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <AnimatePresence>
                 {filteredProjects.map((proj, i) => (
                   <motion.div
                     key={proj.title}
-                    layout
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
@@ -822,7 +823,7 @@ export default function App() {
                   </motion.div>
                 ))}
               </AnimatePresence>
-            </motion.div>
+            </div>
           </motion.div>
         </section>
 
@@ -855,11 +856,10 @@ export default function App() {
 
             {/* Timeline list */}
             <div className="border border-white/5 rounded-2xl overflow-hidden">
-              <AnimatePresence mode="popLayout">
+              <AnimatePresence>
                 {filteredCerts.map((c, i) => (
                   <motion.div
                     key={`${c.provider}-${c.n}`}
-                    layout
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }}
