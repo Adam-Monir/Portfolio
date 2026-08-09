@@ -1,0 +1,30 @@
+---
+title: Medical Diagnosis Expert System
+category: AI & Knowledge Systems
+tags: [Knowledge-Based Systems, Rule-Based Reasoning, Python, Expert System]
+summary: Designed and developed a Knowledge-Based System for clinical triage and preliminary diagnosis. The system analyzes patient symptoms, history, and health indicators using rule-based reasoning to suggest possible conditions and urgency levels — supporting early decision-making without replacing a doctor.
+github: ""
+order: 7
+---
+
+## Overview
+
+A knowledge-based expert system that takes patient symptoms, history, and health indicators and reasons over a clinical rule base to suggest possible conditions and an urgency level.
+
+## Design
+
+- **Knowledge base** — curated rules mapping symptom combinations and risk factors to candidate conditions.
+- **Inference engine** — forward-chained rule-based reasoning with certainty factors so the system can rank the most plausible conditions.
+- **Triage output** — an urgency recommendation that signals when professional attention is needed soon.
+
+## Implementation
+
+- Built in Python with a clean separation between the rule base (data) and the inference engine (logic), so clinical rules can be extended without touching code.
+
+## Safety & Scope
+
+- Positioned explicitly as a decision-support tool: it assists early screening but never replaces a physician's judgment.
+
+## Key Takeaways
+
+- Rule-based systems are transparent and explainable — every suggestion can be traced back to the rules that fired, which matters in sensitive domains like healthcare.

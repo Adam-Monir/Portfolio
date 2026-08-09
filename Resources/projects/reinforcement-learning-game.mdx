@@ -1,0 +1,33 @@
+---
+title: Reinforcement Learning Game
+category: ML & AI
+tags: [Python, Q-Learning, SARSA, Policy Gradient]
+summary: Designed a 2D Python game environment and implemented Dynamic Programming, Q-Learning/SARSA, and Policy Gradient algorithms from scratch to compare RL performance.
+github: ""
+order: 2
+---
+
+## Overview
+
+A custom 2D game environment built in Python, used as a sandbox to implement classic reinforcement learning algorithms from scratch and measure how they learn to solve the game.
+
+## The Environment
+
+- Grid-style 2D game with an agent, goals, and obstacles — designed to be simple enough to train quickly but complex enough to expose real differences between algorithms.
+- Custom reward structure rewards reaching the goal and penalizes risky moves.
+
+## Algorithms Implemented
+
+- **Dynamic Programming** — value iteration for a known model of the environment.
+- **Q-Learning** — model-free, off-policy temporal difference learning.
+- **SARSA** — on-policy variant, comparing how policy updates change exploration behavior.
+- **Policy Gradient** — direct policy optimization through gradient ascent on expected return.
+
+## Findings
+
+- Q-Learning explored more aggressively while SARSA was safer during training in stochastic settings.
+- Policy gradients handled continuous-ish action preferences well but needed more episodes to stabilize.
+
+## Key Takeaways
+
+- Implementing four algorithms from scratch built a deep understanding of the RL theory behind reward, discount, and exploration.

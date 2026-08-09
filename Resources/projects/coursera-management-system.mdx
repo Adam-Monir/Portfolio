@@ -1,0 +1,31 @@
+---
+title: Coursera Management System
+category: Data & Backend
+tags: [SQL, ERD, Database Design, Query Optimization]
+summary: Architected a relational database with SQL for course enrollment and student tracking, applying ERD modeling and query optimization.
+github: ""
+order: 4
+---
+
+## Overview
+
+A relational database system to manage courses, students, enrollments, and progress tracking — designed end-to-end from schema to optimized queries.
+
+## Design
+
+- Built a complete **Entity-Relationship Diagram (ERD)** covering students, courses, instructors, enrollments, and completion records.
+- Normalized the schema to third normal form to eliminate redundancy while keeping joins practical.
+
+## Implementation
+
+- SQL schema with foreign-key constraints and indexes on high-traffic columns (student ID, course ID, enrollment dates).
+- Query layer for enrollment reports, student progress dashboards, and completion analytics.
+
+## Query Optimization
+
+- Indexed frequently filtered columns and rewrote slow joins to reduce scan cost.
+- Compared execution plans before and after index/cache changes to validate improvements.
+
+## Key Takeaways
+
+- A good ERD saves hours of refactoring later; normalization trade-offs must be weighed against read performance.

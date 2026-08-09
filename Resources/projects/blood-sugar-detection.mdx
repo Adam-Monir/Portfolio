@@ -1,0 +1,28 @@
+---
+title: Blood Sugar Detection
+category: ML & AI
+tags: [Python, Scikit-learn, ML, Healthcare]
+summary: Built an ML diagnostic tool using Scikit-learn to predict blood sugar levels through data preprocessing, feature engineering, and classification algorithms.
+github: ""
+order: 5
+---
+
+## Overview
+
+A machine learning diagnostic tool that predicts blood sugar levels from health-related features, built with Scikit-learn.
+
+## Pipeline
+
+- **Preprocessing** — handled missing values, normalized feature scales, and removed outliers that skewed the distribution.
+- **Feature engineering** — derived combinations of health indicators to give the classifier more signal.
+- **Modeling** — trained and compared multiple classifiers (logistic regression, decision trees, and ensemble methods) with cross-validation.
+
+## Evaluation
+
+- Reported precision/recall alongside accuracy, since false negatives matter most in a diagnostic setting.
+- Tuned hyperparameters on a held-out validation split to avoid leakage into test results.
+
+## Key Takeaways
+
+- Data quality and careful preprocessing influenced results more than any single algorithm choice.
+- Healthcare ML requires evaluation metrics aligned with the real-world cost of misclassification.

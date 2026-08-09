@@ -1,0 +1,28 @@
+---
+title: Multi-Task BERT for Text Analysis
+category: NLP & AI
+tags: [PyTorch, BERT, NLP, Deep Learning]
+summary: Enhanced a PyTorch BERT model to simultaneously handle sentiment analysis, paraphrase detection (82% accuracy), and semantic similarity using a custom task-weighted loss function.
+github: ""
+order: 1
+---
+
+## Overview
+
+A single BERT encoder fine-tuned to solve three NLP tasks at once: classifying sentiment, detecting paraphrases, and computing semantic similarity between sentence pairs.
+
+## Approach
+
+- Started from a pretrained BERT checkpoint and added task-specific classification heads.
+- Combined all three objectives into one training loop with a **custom task-weighted loss** so no single task dominated the gradient updates.
+- Shared the transformer backbone across tasks to enable knowledge transfer between sentiment and semantic understanding.
+
+## Results
+
+- Paraphrase detection reached **82% accuracy** on the evaluation set.
+- The multi-task setup converged faster than training each task separately, since the shared encoder learned richer, more general representations.
+
+## Key Takeaways
+
+- Designing weighted multi-task losses requires careful balancing of loss scales across heads.
+- Multi-task fine-tuning is an efficient way to reuse one model for several production NLP needs.

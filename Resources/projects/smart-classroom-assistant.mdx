@@ -1,0 +1,31 @@
+---
+title: Smart Classroom Assistant
+category: Computer Vision
+tags: [OpenCV, face_recognition, CNN, SpeechRecognition, TF-IDF, NLP]
+summary: Built a CV-based classroom assistant using face recognition for automatic attendance, emotion detection (CNN/fer) for mood analysis, speech recognition (Google API) for question transcription, and NLP (TF-IDF) to classify student questions into topics.
+github: ""
+order: 6
+---
+
+## Overview
+
+A multimodal classroom assistant that turns a camera and microphone into an attendance, engagement, and Q&A analytics tool.
+
+## Vision Side
+
+- **Face recognition** for automatic attendance, powered by the `face_recognition` library with OpenCV tracking.
+- **Emotion detection** using a CNN (fer-style) to classify mood, feeding a class-level engagement signal.
+
+## Audio & NLP Side
+
+- **Speech recognition** (Google API) transcribes student questions in real time.
+- **TF-IDF** vectorization classifies each transcribed question into topics, letting instructors see which areas students struggle with.
+
+## Integration
+
+- Modules run per-classroom session; results are aggregated into attendance and topic-distribution reports.
+
+## Key Takeaways
+
+- Combining vision and NLP pipelines requires careful synchronization and tolerant failure handling (e.g., poor lighting vs. noisy audio).
+- Simple TF-IDF classifiers hold up well for topic tagging when the label space is small.

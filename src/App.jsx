@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Github, Linkedin, Mail, Code2, Cpu, Layout, ChevronRight,
@@ -10,6 +10,40 @@ import {
 
 import profileImg from './assets/profile.jpg';
 import cvPdf from '../Resources/Adam Rany KamalEldin .pdf';
+import profile from '../Resources/profile.json';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+// ─────────────────────────────────────────────
+//  FRONTMATTER PARSER (browser-safe, no deps)
+// ─────────────────────────────────────────────
+const parseFrontmatter = (raw) => {
+  const match = /^---\s*\r?\n([\s\S]*?)\r?\n---\s*(?:\r?\n|$)/.exec(raw);
+  if (!match) return { data: {}, content: raw.trim() };
+
+  const data = {};
+  for (const line of match[1].split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const idx = line.indexOf(':');
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    let value = line.slice(idx + 1).trim();
+
+    if (value.startsWith('[') && value.endsWith(']')) {
+      value = value
+        .slice(1, -1)
+        .split(',')
+        .map((v) => v.trim().replace(/^["']|["']$/g, ''))
+        .filter(Boolean);
+    } else {
+      value = value.replace(/^["']|["']$/g, '');
+      if (/^-?\d+(\.\d+)?$/.test(value)) value = Number(value);
+    }
+    data[key] = value;
+  }
+  return { data, content: raw.slice(match[0].length).trim() };
+};
 
 // ─────────────────────────────────────────────
 //  CYBER BACKGROUND
@@ -44,14 +78,7 @@ const CyberBackground = () => {
 // ─────────────────────────────────────────────
 //  TYPING ANIMATION HOOK
 // ─────────────────────────────────────────────
-const roles = [
-  'AI Engineering Student',
-  'Machine Learning Developer',
-  'Frontend Developer',
-  'Problem Solver',
-];
-
-const useTypingEffect = () => {
+const useTypingEffect = (roles) => {
   const [displayed, setDisplayed] = useState('');
   const [roleIdx, setRoleIdx] = useState(0);
   const [charIdx, setCharIdx] = useState(0);
@@ -74,7 +101,7 @@ const useTypingEffect = () => {
 
     setDisplayed(current.slice(0, charIdx));
     return () => clearTimeout(timeout);
-  }, [charIdx, deleting, roleIdx]);
+  }, [charIdx, deleting, roleIdx, roles]);
 
   return displayed;
 };
@@ -221,55 +248,21 @@ const experiences = [
   },
 ];
 
-const projects = [
-  {
-    title: 'Multi-Task BERT for Text Analysis',
-    category: 'NLP & AI',
-    desc: 'Enhanced a PyTorch BERT model to simultaneously handle sentiment analysis, paraphrase detection (82% accuracy), and semantic similarity using a custom task-weighted loss function.',
-    tags: ['PyTorch', 'BERT', 'NLP', 'Deep Learning'],
-  },
-  {
-    title: 'Reinforcement Learning Game',
-    category: 'ML & AI',
-    desc: 'Designed a 2D Python game environment and implemented Dynamic Programming, Q-Learning/SARSA, and Policy Gradient algorithms from scratch to compare RL performance.',
-    tags: ['Python', 'Q-Learning', 'SARSA', 'Policy Gradient'],
-  },
-  {
-    title: 'Smart City Optimization',
-    category: 'Algorithms & Backend',
-    desc: 'Built a graph-based routing system for Egyptian city infrastructure using Dijkstra\'s algorithm and Minimum Spanning Tree to optimize network connectivity.',
-    tags: ['Python', 'Dijkstra', 'MST', 'Graph Theory'],
-  },
-  {
-    title: 'Coursera Management System',
-    category: 'Data & Backend',
-    desc: 'Architected a relational database with SQL for course enrollment and student tracking, applying ERD modeling and query optimization.',
-    tags: ['SQL', 'ERD', 'Database Design', 'Query Optimization'],
-  },
-  {
-    title: 'Blood Sugar Detection',
-    category: 'ML & AI',
-    desc: 'Built an ML diagnostic tool using Scikit-learn to predict blood sugar levels through data preprocessing, feature engineering, and classification algorithms.',
-    tags: ['Python', 'Scikit-learn', 'ML', 'Healthcare'],
-  },
-  {
-    title: 'Smart Classroom Assistant',
-    category: 'Computer Vision',
-    desc: 'Built a CV-based classroom assistant using face recognition for automatic attendance, emotion detection (CNN/fer) for mood analysis, speech recognition (Google API) for question transcription, and NLP (TF-IDF) to classify student questions into topics.',
-    tags: ['OpenCV', 'face_recognition', 'CNN', 'SpeechRecognition', 'TF-IDF', 'NLP'],
-  },
-  {
-    title: 'Medical Diagnosis Expert System',
-    category: 'AI & Knowledge Systems',
-    desc: 'Designed and developed a Knowledge-Based System for clinical triage and preliminary diagnosis. The system analyzes patient symptoms, history, and health indicators using rule-based reasoning to suggest possible conditions and urgency levels — supporting early decision-making without replacing a doctor.',
-    tags: ['Knowledge-Based Systems', 'Rule-Based Reasoning', 'Python', 'Expert System'],
-  },
-];
+// ── PROJECTS (from Resources/projects/*.mdx) ──
+const projectFiles = import.meta.glob('/Resources/projects/*.mdx', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
 
-const PROJECT_CATEGORIES = [
-  'All', 'ML & AI', 'NLP & AI', 'Algorithms & Backend',
-  'Data & Backend', 'Computer Vision', 'AI & Knowledge Systems',
-];
+const projects = Object.values(projectFiles)
+  .map((raw) => {
+    const { data, content } = parseFrontmatter(raw);
+    return { ...data, body: content };
+  })
+  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+const PROJECT_CATEGORIES = ['All', ...new Set(projects.map((p) => p.category))];
 
 // ── TECHNICAL EXPERTISE DATA ──
 const expertiseCategories = [
@@ -305,16 +298,7 @@ const expertiseCategories = [
   },
 ];
 
-const infoCards = [
-  { icon: MapPin, label: 'Location', value: 'Alexandria, Egypt' },
-  {
-    icon: GraduationCap,
-    label: 'Education',
-    value: 'B.Sc. AI Engineering — Alamein International University (2022–2027)',
-  },
-  { icon: Award, label: 'GPA', value: '3.00 / 4.0' },
-  { icon: Globe, label: 'Languages', value: 'Arabic (Native), English (Upper Intermediate)' },
-];
+const ICONS = { MapPin, GraduationCap, Award, Globe };
 
 // ─────────────────────────────────────────────
 //  SECTION HEADER
@@ -330,11 +314,12 @@ const SectionHeader = ({ icon: Icon, children }) => (
 //  MAIN APP
 // ─────────────────────────────────────────────
 export default function App() {
-  const typedRole = useTypingEffect();
+  const typedRole = useTypingEffect(profile.hero.roles);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [certFilter, setCertFilter] = useState('All');
   const [cvOpen, setCvOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
 
   const navLinks = [
     { href: '#home', label: 'Home' },
@@ -386,10 +371,10 @@ export default function App() {
               {/* Modal header */}
               <div className="flex justify-between items-center px-6 py-4 border-b border-white/5">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-[#00ff9d] text-sm tracking-wider">Adam Monir — CV</span>
+                  <span className="font-mono text-[#00ff9d] text-sm tracking-wider">{profile.brand.cvModalTitle}</span>
                   <a
                     href={cvPdf}
-                    download="Adam Rany KamalEldin CV.pdf"
+                    download={profile.brand.cvDownloadName}
                     className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] border border-[#00ff9d]/30 bg-[#00ff9d]/5 px-3 py-1 rounded-full hover:bg-[#00ff9d]/15 transition-colors ml-2"
                   >
                     <Download size={12} /> Download
@@ -416,11 +401,62 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* ── PROJECT READ-MORE MODAL ── */}
+      <AnimatePresence>
+        {selectedProject && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-start justify-center overflow-y-auto py-10 px-4"
+            onClick={() => setSelectedProject(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-3xl bg-[#0f0f0f] border border-[#00ff9d]/20 rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(0,255,157,0.1)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center px-6 py-4 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] bg-[#00ff9d]/10 border border-[#00ff9d]/20 px-3 py-1 rounded">
+                    {selectedProject.category}
+                  </span>
+                  <h3 className="text-lg font-bold text-white">{selectedProject.title}</h3>
+                </div>
+                <button
+                  onClick={() => setSelectedProject(null)}
+                  className="text-gray-400 hover:text-[#00ff9d] transition-colors"
+                  aria-label="Close project details"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="px-6 py-6">
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {selectedProject.tags.map((tag) => (
+                    <span key={tag} className="text-[10px] bg-white/5 border border-white/10 text-gray-400 px-2 py-0.5 rounded font-mono">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} className="markdown-body">
+                  {selectedProject.body}
+                </ReactMarkdown>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── NAVBAR ── */}
       <nav className="fixed top-0 w-full z-50 bg-[#080808]/80 backdrop-blur-md border-b border-white/5 px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="text-xl font-black text-[#00ff9d] tracking-tighter uppercase">
-            Adam.AI
+            {profile.brand.name}
           </div>
 
           {/* Desktop links */}
@@ -490,36 +526,36 @@ export default function App() {
             </h2>
 
             <h1 className="text-5xl md:text-7xl font-black mb-6 leading-none">
-              ADAM{' '}
+              {profile.hero.nameParts.first}{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00ff9d] to-emerald-500">
-                MONIR
+                {profile.hero.nameParts.last}
               </span>
             </h1>
             <p className="text-gray-400 text-lg mb-8 leading-relaxed max-w-lg">
-              5th-year AI Engineering student at{' '}
+              {profile.hero.summary.lead}{' '}
               <span className="text-white underline decoration-[#00ff9d]">
-                Alamein International University
+                {profile.hero.summary.highlight}
               </span>
-              . Bridging the gap between software architecture and complex neural systems.
+              {profile.hero.summary.tail}
             </p>
 
             {/* CTA buttons */}
             <div className="flex flex-wrap gap-4 items-center">
               <a
-                href="tel:010159272926"
+                href={profile.hero.cta.connect.href}
                 className="bg-[#00ff9d] text-black px-6 py-3 rounded-lg font-bold hover:scale-105 transition-transform flex items-center gap-2"
               >
-                Connect Now <ChevronRight size={18} />
+                {profile.hero.cta.connect.label} <ChevronRight size={18} />
               </a>
               <button
                 onClick={() => setCvOpen(true)}
                 className="border border-[#00ff9d] text-[#00ff9d] px-6 py-3 rounded-lg font-bold hover:bg-[#00ff9d]/10 transition-all flex items-center gap-2"
               >
-                <FileText size={16} /> Preview CV
+                <FileText size={16} /> {profile.hero.cta.previewCv.label}
               </button>
               <div className="flex gap-2">
                 <a
-                  href="https://github.com/Adam-Monir"
+                  href={profile.hero.socials.github}
                   target="_blank"
                   rel="noreferrer"
                   className="p-3 bg-white/5 rounded-lg hover:text-[#00ff9d] transition-colors"
@@ -527,7 +563,7 @@ export default function App() {
                   <Github />
                 </a>
                 <a
-                  href="https://www.linkedin.com/in/adam-kamal-11ab41349/"
+                  href={profile.hero.socials.linkedin}
                   target="_blank"
                   rel="noreferrer"
                   className="p-3 bg-white/5 rounded-lg hover:text-[#00ff9d] transition-colors"
@@ -577,27 +613,29 @@ export default function App() {
             <SectionHeader icon={Brain}>About Me</SectionHeader>
 
             <p className="text-gray-400 text-lg leading-relaxed max-w-3xl mb-12">
-              I'm <span className="text-white font-bold">Adam Rany Kamaleldin</span>, an AI Engineering
-              undergraduate at Alamein International University. Over three years I've built smart
-              systems, NLP models, RL environments, and full-stack platforms — combining software
-              architecture with real-world AI to solve meaningful problems.
+              {profile.about.paragraph.lead}
+              <span className="text-white font-bold">{profile.about.paragraph.highlight}</span>
+              {profile.about.paragraph.tail}
             </p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {infoCards.map(({ icon: Icon, label, value }) => (
-                <motion.div
-                  key={label}
-                  whileHover={{ y: -6, scale: 1.02, boxShadow: '0 0 25px rgba(0,255,157,0.08)' }}
-                  transition={SNAP}
-                  className="p-6 bg-[#111] border border-white/5 rounded-2xl"
-                >
-                  <motion.div whileHover={{ rotate: 12, scale: 1.1 }} transition={SNAP} className="inline-block mb-3">
-                    <Icon className="text-[#00ff9d]" size={22} />
+              {profile.about.infoCards.map(({ icon, label, value }) => {
+                const Icon = ICONS[icon];
+                return (
+                  <motion.div
+                    key={label}
+                    whileHover={{ y: -6, scale: 1.02, boxShadow: '0 0 25px rgba(0,255,157,0.08)' }}
+                    transition={SNAP}
+                    className="p-6 bg-[#111] border border-white/5 rounded-2xl"
+                  >
+                    <motion.div whileHover={{ rotate: 12, scale: 1.1 }} transition={SNAP} className="inline-block mb-3">
+                      {Icon && <Icon className="text-[#00ff9d]" size={22} />}
+                    </motion.div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">{label}</div>
+                    <div className="text-sm text-white font-medium leading-snug">{value}</div>
                   </motion.div>
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">{label}</div>
-                  <div className="text-sm text-white font-medium leading-snug">{value}</div>
-                </motion.div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         </section>
@@ -747,24 +785,39 @@ export default function App() {
                     exit={{ opacity: 0, scale: 0.95 }}
                     whileHover={{ y: -6, scale: 1.02, boxShadow: '0 0 25px rgba(0,255,157,0.08)' }}
                     transition={{ ...SNAP, delay: i * 0.05 }}
-                    className="p-6 bg-[#111] border border-white/5 rounded-2xl flex flex-col"
+                    onClick={() => setSelectedProject(proj)}
+                    className="group p-6 bg-[#111] border border-white/5 rounded-2xl flex flex-col cursor-pointer"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <span className="text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] bg-[#00ff9d]/10 border border-[#00ff9d]/20 px-2 py-1 rounded">
                         {proj.category}
                       </span>
-                      <a href="#" className="p-1.5 bg-white/5 rounded-lg hover:text-[#00ff9d] transition-colors" aria-label="View on GitHub">
-                        <Github size={15} />
-                      </a>
+                      {proj.github ? (
+                        <a
+                          href={proj.github}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 bg-white/5 rounded-lg hover:text-[#00ff9d] transition-colors"
+                          aria-label="View on GitHub"
+                        >
+                          <Github size={15} />
+                        </a>
+                      ) : (
+                        <span />
+                      )}
                     </div>
                     <h4 className="font-bold text-base mb-2 text-white">{proj.title}</h4>
-                    <p className="text-gray-500 text-sm leading-relaxed flex-1">{proj.desc}</p>
+                    <p className="text-gray-500 text-sm leading-relaxed flex-1">{proj.summary}</p>
                     <div className="flex flex-wrap gap-2 mt-4">
                       {proj.tags.map((tag) => (
                         <span key={tag} className="text-[10px] bg-white/5 border border-white/10 text-gray-400 px-2 py-0.5 rounded font-mono">
                           {tag}
                         </span>
                       ))}
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] mt-5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Read more <ChevronRight size={12} />
                     </div>
                   </motion.div>
                 ))}

@@ -1,0 +1,28 @@
+---
+title: Smart City Optimization
+category: Algorithms & Backend
+tags: [Python, Dijkstra, MST, Graph Theory]
+summary: Built a graph-based routing system for Egyptian city infrastructure using Dijkstra's algorithm and Minimum Spanning Tree to optimize network connectivity.
+github: ""
+order: 3
+---
+
+## Overview
+
+A graph-based routing and connectivity system applied to Egyptian city infrastructure, modeled as weighted graphs of districts and connection points.
+
+## Approach
+
+- Modeled the city as a graph where districts are nodes and candidate connections are weighted edges.
+- **Dijkstra's algorithm** for shortest-path routing between any two districts, handling realistic traffic-style weights.
+- **Minimum Spanning Tree (MST)** to find the cheapest way to connect all districts with minimal total infrastructure cost.
+
+## Implementation
+
+- Pure Python implementation of Dijkstra and Kruskal/Prim-style MST from scratch.
+- Command-line interface to load city data, query routes, and visualize connectivity decisions.
+
+## Key Takeaways
+
+- Choosing the right graph algorithm depends on the objective: cheapest full coverage (MST) vs. fastest single route (Dijkstra).
+- Graph modeling skills translate directly to network design, logistics, and infrastructure planning problems.

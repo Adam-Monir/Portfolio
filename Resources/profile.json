@@ -1,0 +1,53 @@
+{
+  "brand": {
+    "name": "Adam.AI",
+    "cvModalTitle": "Adam Monir — CV",
+    "cvDownloadName": "Adam Rany KamalEldin CV.pdf"
+  },
+  "hero": {
+    "roles": [
+      "AI Engineering Student",
+      "Machine Learning Developer",
+      "Frontend Developer",
+      "Problem Solver"
+    ],
+    "nameParts": {
+      "first": "ADAM",
+      "last": "MONIR"
+    },
+    "summary": {
+      "lead": "5th-year AI Engineering student at",
+      "highlight": "Alamein International University",
+      "tail": ". Bridging the gap between software architecture and complex neural systems."
+    },
+    "cta": {
+      "connect": { "label": "Connect Now", "href": "tel:010159272926" },
+      "previewCv": { "label": "Preview CV" }
+    },
+    "socials": {
+      "github": "https://github.com/Adam-Monir",
+      "linkedin": "https://www.linkedin.com/in/adam-kamal-11ab41349/"
+    }
+  },
+  "about": {
+    "paragraph": {
+      "lead": "I'm ",
+      "highlight": "Adam Rany Kamaleldin",
+      "tail": ", an AI Engineering undergraduate at Alamein International University. Over three years I've built smart systems, NLP models, RL environments, and full-stack platforms — combining software architecture with real-world AI to solve meaningful problems."
+    },
+    "infoCards": [
+      { "icon": "MapPin", "label": "Location", "value": "Alexandria, Egypt" },
+      {
+        "icon": "GraduationCap",
+        "label": "Education",
+        "value": "B.Sc. AI Engineering — Alamein International University (2022–2027)"
+      },
+      { "icon": "Award", "label": "GPA", "value": "3.00 / 4.0" },
+      {
+        "icon": "Globe",
+        "label": "Languages",
+        "value": "Arabic (Native), English (Upper Intermediate)"
+      }
+    ]
+  }
+}
