@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import profileImg from './assets/profile.jpg';
+import cvPdf from '../Resources/Adam Rany KamalEldin .pdf';
 
 // ─────────────────────────────────────────────
 //  CYBER BACKGROUND
@@ -384,7 +385,16 @@ export default function App() {
             >
               {/* Modal header */}
               <div className="flex justify-between items-center px-6 py-4 border-b border-white/5">
-                <span className="font-mono text-[#00ff9d] text-sm tracking-wider">Adam Monir — CV</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[#00ff9d] text-sm tracking-wider">Adam Monir — CV</span>
+                  <a
+                    href={cvPdf}
+                    download="Adam Rany KamalEldin CV.pdf"
+                    className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] border border-[#00ff9d]/30 bg-[#00ff9d]/5 px-3 py-1 rounded-full hover:bg-[#00ff9d]/15 transition-colors ml-2"
+                  >
+                    <Download size={12} /> Download
+                  </a>
+                </div>
                 <button
                   onClick={() => setCvOpen(false)}
                   className="text-gray-400 hover:text-[#00ff9d] transition-colors"
@@ -395,7 +405,7 @@ export default function App() {
               </div>
               {/* iframe body */}
               <iframe
-                src="#"
+                src={cvPdf}
                 width="100%"
                 height="80vh"
                 style={{ border: 'none', display: 'block', minHeight: '80vh' }}
