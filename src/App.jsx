@@ -46,15 +46,42 @@ const parseFrontmatter = (raw) => {
 };
 
 // ─────────────────────────────────────────────
+//  MEDIA QUERY HOOK
+// ─────────────────────────────────────────────
+// Starts false so the mobile branch renders first, then corrects on mount.
+const useMediaQuery = (query) => {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const apply = () => setMatches(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, [query]);
+  return matches;
+};
+
+// ─────────────────────────────────────────────
 //  CYBER BACKGROUND
 // ─────────────────────────────────────────────
 const CyberBackground = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  // The spotlight is a pointer effect — never register it on touch devices.
+  const canHover = useMediaQuery('(hover: hover) and (pointer: fine)');
+
   useEffect(() => {
-    const handleMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
-    window.addEventListener('mousemove', handleMove);
-    return () => window.removeEventListener('mousemove', handleMove);
-  }, []);
+    if (!canHover) return;
+    let frame = 0;
+    const handleMove = (e) => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setMousePos({ x: e.clientX, y: e.clientY }));
+    };
+    window.addEventListener('mousemove', handleMove, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('mousemove', handleMove);
+    };
+  }, [canHover]);
 
   return (
     <div className="fixed inset-0 -z-10 bg-[#080808]">
@@ -65,12 +92,14 @@ const CyberBackground = () => {
           backgroundSize: '40px 40px',
         }}
       />
-      <div
-        className="pointer-events-none absolute inset-0 transition-opacity duration-500"
-        style={{
-          background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, rgba(0, 255, 157, 0.08), transparent 80%)`,
-        }}
-      />
+      {canHover && (
+        <div
+          className="pointer-events-none absolute inset-0 transition-opacity duration-500"
+          style={{
+            background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, rgba(0, 255, 157, 0.08), transparent 80%)`,
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -106,6 +135,21 @@ const useTypingEffect = (roles) => {
   return displayed;
 };
 
+// Isolated so the typewriter's ~20 state updates/sec re-render this heading
+// only, instead of reconciling the whole page.
+const TypedRole = ({ roles }) => {
+  const typed = useTypingEffect(roles);
+  return (
+    <h2 className="text-[#00ff9d] font-mono text-[11px] sm:text-xs lg:text-sm leading-5 min-h-5 mb-3 sm:mb-4 tracking-[0.15em] sm:tracking-[0.2em] lg:tracking-[0.3em] uppercase">
+      {typed}
+      <span
+        className="inline-block ml-0.5 w-[2px] h-[1em] bg-[#00ff9d] align-middle"
+        style={{ animation: 'blink 1s step-end infinite' }}
+      />
+    </h2>
+  );
+};
+
 // ─────────────────────────────────────────────
 //  SKILL BOXES (unchanged)
 // ─────────────────────────────────────────────
@@ -115,13 +159,13 @@ const SkillBox = ({ icon: Icon, title, items }) => (
   <motion.div
     whileHover={{ y: -6, scale: 1.02, boxShadow: '0 0 25px rgba(0,255,157,0.08)' }}
     transition={SNAP}
-    className="p-8 bg-[#111] border border-white/5 rounded-3xl group"
+    className="p-5 sm:p-6 lg:p-8 bg-[#111] border border-white/5 rounded-3xl group"
     style={{ borderColor: 'rgba(255,255,255,0.05)' }}
   >
-    <motion.div whileHover={{ rotate: 12, scale: 1.1 }} transition={SNAP} className="inline-block mb-6">
+    <motion.div whileHover={{ rotate: 12, scale: 1.1 }} transition={SNAP} className="inline-block mb-4 sm:mb-6">
       <Icon className="text-[#00ff9d]" size={32} />
     </motion.div>
-    <h4 className="text-xl font-bold mb-3">{title}</h4>
+    <h4 className="text-lg sm:text-xl font-bold mb-3">{title}</h4>
     <p className="text-gray-500 text-sm leading-relaxed">{items}</p>
   </motion.div>
 );
@@ -130,12 +174,12 @@ const SkillCard = ({ icon: Icon, title, items }) => (
   <motion.div
     whileHover={{ y: -6, scale: 1.02, boxShadow: '0 0 25px rgba(0,255,157,0.08)' }}
     transition={SNAP}
-    className="p-8 bg-[#111] border border-white/5 rounded-3xl group lg:col-span-1"
+    className="p-5 sm:p-6 lg:p-8 bg-[#111] border border-white/5 rounded-3xl group lg:col-span-1"
   >
-    <motion.div whileHover={{ rotate: 12, scale: 1.1 }} transition={SNAP} className="inline-block mb-6">
+    <motion.div whileHover={{ rotate: 12, scale: 1.1 }} transition={SNAP} className="inline-block mb-4 sm:mb-6">
       <Icon className="text-[#00ff9d]" size={32} />
     </motion.div>
-    <h4 className="text-xl font-bold mb-3">{title}</h4>
+    <h4 className="text-lg sm:text-xl font-bold mb-3">{title}</h4>
     <p className="text-gray-500 text-sm leading-relaxed">{items}</p>
   </motion.div>
 );
@@ -304,8 +348,8 @@ const ICONS = { MapPin, GraduationCap, Award, Globe };
 //  SECTION HEADER
 // ─────────────────────────────────────────────
 const SectionHeader = ({ icon: Icon, children }) => (
-  <h3 className="text-3xl font-black mb-12 flex items-center gap-4">
-    <Icon className="text-[#00ff9d]" />
+  <h3 className="text-2xl sm:text-3xl font-black leading-tight mb-6 sm:mb-8 lg:mb-12 flex items-center gap-3 sm:gap-4">
+    <Icon className="text-[#00ff9d] shrink-0" />
     {children}
   </h3>
 );
@@ -314,12 +358,12 @@ const SectionHeader = ({ icon: Icon, children }) => (
 //  MAIN APP
 // ─────────────────────────────────────────────
 export default function App() {
-  const typedRole = useTypingEffect(profile.hero.roles);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [certFilter, setCertFilter] = useState('All');
   const [cvOpen, setCvOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+  const canEmbedPdf = useMediaQuery('(min-width: 768px) and (pointer: fine)');
 
   const navLinks = [
     { href: '#home', label: 'Home' },
@@ -331,6 +375,26 @@ export default function App() {
     { href: '#certifications', label: 'Credentials' },
     { href: '#contact', label: 'Contact' },
   ];
+
+  // The browser's CSS smooth scroll is fire-and-forget and gets cancelled by
+  // competing layout work. Closing the menu (a React commit plus framer-motion's
+  // height collapse) raced it, so mobile taps never landed. Drive the scroll
+  // ourselves, once the menu has finished collapsing.
+  const handleMobileNavClick = (e, href) => {
+    e.preventDefault();
+    const el = document.querySelector(href);
+    setMenuOpen(false);
+    if (!el) return;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Keep in sync with the dropdown's exit transition duration below (0.25s).
+    window.setTimeout(() => {
+      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      // replaceState, not pushState: Back should leave the site, not walk
+      // back through every anchor the user tapped.
+      window.history.replaceState(null, '', href);
+    }, reduce ? 0 : 280);
+  };
 
   const filteredProjects =
     activeFilter === 'All'
@@ -357,7 +421,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-start justify-center overflow-y-auto py-10 px-4"
+            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain p-3 sm:p-6 md:py-10"
             onClick={() => setCvOpen(false)}
           >
             <motion.div
@@ -365,37 +429,65 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-3xl bg-[#0f0f0f] border border-[#00ff9d]/20 rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(0,255,157,0.1)]"
+              className="w-full max-w-3xl bg-[#0f0f0f] border border-[#00ff9d]/20 rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(0,255,157,0.1)] flex flex-col max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-3rem)]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal header */}
-              <div className="flex justify-between items-center px-6 py-4 border-b border-white/5">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-[#00ff9d] text-sm tracking-wider">{profile.brand.cvModalTitle}</span>
+              <div className="flex justify-between items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 shrink-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-mono text-[#00ff9d] text-xs sm:text-sm tracking-wider truncate">{profile.brand.cvModalTitle}</span>
                   <a
                     href={cvPdf}
                     download={profile.brand.cvDownloadName}
-                    className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] border border-[#00ff9d]/30 bg-[#00ff9d]/5 px-3 py-1 rounded-full hover:bg-[#00ff9d]/15 transition-colors ml-2"
+                    className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] border border-[#00ff9d]/30 bg-[#00ff9d]/5 px-3 py-1 rounded-full hover:bg-[#00ff9d]/15 transition-colors ml-2"
                   >
                     <Download size={12} /> Download
                   </a>
                 </div>
                 <button
                   onClick={() => setCvOpen(false)}
-                  className="text-gray-400 hover:text-[#00ff9d] transition-colors"
+                  className="p-2 -m-2 shrink-0 text-gray-400 hover:text-[#00ff9d] transition-colors"
                   aria-label="Close CV preview"
                 >
                   <X size={20} />
                 </button>
               </div>
-              {/* iframe body */}
-              <iframe
-                src={cvPdf}
-                width="100%"
-                height="80vh"
-                style={{ border: 'none', display: 'block', minHeight: '80vh' }}
-                title="Adam Monir CV"
-              />
+              {/* Mobile browsers (iOS Safari especially) do not render PDFs in an
+                  iframe, so hand the file to the OS viewer instead. */}
+              {canEmbedPdf ? (
+                <iframe
+                  src={cvPdf}
+                  title="Adam Monir CV"
+                  className="w-full h-[75vh] border-0 block"
+                />
+              ) : (
+                <div className="px-5 py-8 flex flex-col items-center text-center gap-5 overflow-y-auto">
+                  <div className="p-4 bg-[#00ff9d]/10 rounded-2xl">
+                    <FileText className="text-[#00ff9d]" size={32} />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-base break-words">{profile.brand.cvDownloadName}</p>
+                    <p className="text-gray-500 text-xs font-mono mt-1">PDF — best viewed full screen</p>
+                  </div>
+                  <div className="flex flex-col w-full gap-3">
+                    <a
+                      href={cvPdf}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full bg-[#00ff9d] text-black px-6 py-3.5 rounded-lg font-bold flex items-center justify-center gap-2"
+                    >
+                      <Eye size={18} /> Open CV
+                    </a>
+                    <a
+                      href={cvPdf}
+                      download={profile.brand.cvDownloadName}
+                      className="w-full border border-[#00ff9d] text-[#00ff9d] px-6 py-3.5 rounded-lg font-bold flex items-center justify-center gap-2"
+                    >
+                      <Download size={18} /> Download PDF
+                    </a>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -409,7 +501,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-start justify-center overflow-y-auto py-10 px-4"
+            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain p-3 sm:p-6 md:py-10"
             onClick={() => setSelectedProject(null)}
           >
             <motion.div
@@ -417,26 +509,26 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-3xl bg-[#0f0f0f] border border-[#00ff9d]/20 rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(0,255,157,0.1)]"
+              className="w-full max-w-3xl bg-[#0f0f0f] border border-[#00ff9d]/20 rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(0,255,157,0.1)] flex flex-col max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-3rem)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-between items-center px-6 py-4 border-b border-white/5">
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] bg-[#00ff9d]/10 border border-[#00ff9d]/20 px-3 py-1 rounded">
+              <div className="flex justify-between items-start sm:items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] bg-[#00ff9d]/10 border border-[#00ff9d]/20 px-3 py-1 rounded shrink-0">
                     {selectedProject.category}
                   </span>
-                  <h3 className="text-lg font-bold text-white">{selectedProject.title}</h3>
+                  <h3 className="text-sm sm:text-base md:text-lg font-bold text-white leading-snug min-w-0 break-words">{selectedProject.title}</h3>
                 </div>
                 <button
                   onClick={() => setSelectedProject(null)}
-                  className="text-gray-400 hover:text-[#00ff9d] transition-colors"
+                  className="p-2 -m-2 shrink-0 text-gray-400 hover:text-[#00ff9d] transition-colors"
                   aria-label="Close project details"
                 >
                   <X size={20} />
                 </button>
               </div>
-              <div className="px-6 py-6">
-                <div className="flex flex-wrap gap-2 mb-6">
+              <div className="px-4 sm:px-6 py-5 sm:py-6 overflow-y-auto overscroll-contain flex-1">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-5 sm:mb-6">
                   {selectedProject.tags.map((tag) => (
                     <span key={tag} className="text-[10px] bg-white/5 border border-white/10 text-gray-400 px-2 py-0.5 rounded font-mono">
                       {tag}
@@ -455,14 +547,14 @@ export default function App() {
       </AnimatePresence>
 
       {/* ── NAVBAR ── */}
-      <nav className="fixed top-0 w-full z-50 bg-[#080808]/80 backdrop-blur-md border-b border-white/5 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="text-xl font-black text-[#00ff9d] tracking-tighter uppercase">
+      <nav className="fixed top-0 w-full z-50 bg-[#080808]/80 backdrop-blur-md border-b border-white/5 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex justify-between items-center h-14 lg:h-16">
+          <div className="text-lg sm:text-xl font-black text-[#00ff9d] tracking-tighter uppercase">
             {profile.brand.name}
           </div>
 
           {/* Desktop links */}
-          <div className="hidden md:flex gap-8 text-xs font-mono text-gray-400 uppercase tracking-widest">
+          <div className="hidden lg:flex gap-5 xl:gap-8 text-xs font-mono text-gray-400 uppercase tracking-widest">
             {navLinks.map((l) => (
               <a
                 key={l.href}
@@ -477,9 +569,11 @@ export default function App() {
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden p-2 text-gray-400 hover:text-[#00ff9d] transition-colors"
+            className="lg:hidden -mr-2 p-2.5 text-gray-400 hover:text-[#00ff9d] transition-colors"
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
           >
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -493,18 +587,19 @@ export default function App() {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="md:hidden overflow-hidden bg-[#0d0d0d] border-t border-white/5"
+              id="mobile-menu"
+              className="lg:hidden overflow-hidden bg-[#0d0d0d] border-t border-white/5"
             >
-              <div className="flex flex-col py-4 px-6 gap-5">
+              <div className="flex flex-col py-2 px-4 sm:px-6 max-h-[calc(100dvh-3.5rem)] overflow-y-auto">
                 {navLinks.map((l) => (
                   <a
                     key={l.href}
                     href={l.href}
-                    onClick={() => setMenuOpen(false)}
-                    className="relative group w-fit text-xs font-mono text-gray-400 uppercase tracking-widest hover:text-[#00ff9d] transition-colors"
+                    onClick={(e) => handleMobileNavClick(e, l.href)}
+                    className="relative group w-fit py-2.5 text-xs font-mono text-gray-400 uppercase tracking-widest hover:text-[#00ff9d] transition-colors"
                   >
                     {l.label}
-                    <span className="absolute -bottom-0.5 left-0 w-0 h-[2px] bg-[#00ff9d] transition-all duration-300 group-hover:w-full" />
+                    <span className="absolute bottom-1.5 left-0 w-0 h-[2px] bg-[#00ff9d] transition-all duration-300 group-hover:w-full" />
                   </a>
                 ))}
               </div>
@@ -513,27 +608,21 @@ export default function App() {
         </AnimatePresence>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 pt-32">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-24 lg:pt-32">
 
         {/* ── HERO ── */}
-        <section id="home" className="grid lg:grid-cols-2 gap-12 items-center py-10">
+        <section id="home" className="grid lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 items-center py-6 sm:py-8 lg:py-10">
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}>
             {/* Typing subtitle */}
-            <h2 className="text-[#00ff9d] font-mono text-sm mb-4 tracking-[0.3em] uppercase h-5">
-              {typedRole}
-              <span
-                className="inline-block ml-0.5 w-[2px] h-[1em] bg-[#00ff9d] align-middle"
-                style={{ animation: 'blink 1s step-end infinite' }}
-              />
-            </h2>
+            <TypedRole roles={profile.hero.roles} />
 
-            <h1 className="text-5xl md:text-7xl font-black mb-6 leading-none">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black mb-6 leading-none">
               {profile.hero.nameParts.first}{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00ff9d] to-emerald-500">
                 {profile.hero.nameParts.last}
               </span>
             </h1>
-            <p className="text-gray-400 text-lg mb-8 leading-relaxed max-w-lg">
+            <p className="text-gray-400 text-base sm:text-lg mb-6 sm:mb-8 leading-relaxed max-w-lg">
               {profile.hero.summary.lead}{' '}
               <span className="text-white underline decoration-[#00ff9d]">
                 {profile.hero.summary.highlight}
@@ -542,20 +631,20 @@ export default function App() {
             </p>
 
             {/* CTA buttons */}
-            <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
               <a
                 href={profile.hero.cta.connect.href}
-                className="bg-[#00ff9d] text-black px-6 py-3 rounded-lg font-bold hover:scale-105 transition-transform flex items-center gap-2"
+                className="flex-1 sm:flex-none justify-center bg-[#00ff9d] text-black px-5 sm:px-6 py-3 rounded-lg font-bold hover:scale-105 transition-transform flex items-center gap-2"
               >
                 {profile.hero.cta.connect.label} <ChevronRight size={18} />
               </a>
               <button
                 onClick={() => setCvOpen(true)}
-                className="border border-[#00ff9d] text-[#00ff9d] px-6 py-3 rounded-lg font-bold hover:bg-[#00ff9d]/10 transition-all flex items-center gap-2"
+                className="flex-1 sm:flex-none justify-center border border-[#00ff9d] text-[#00ff9d] px-5 sm:px-6 py-3 rounded-lg font-bold hover:bg-[#00ff9d]/10 transition-all flex items-center gap-2"
               >
                 <FileText size={16} /> {profile.hero.cta.previewCv.label}
               </button>
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto">
                 <a
                   href={profile.hero.socials.github}
                   target="_blank"
@@ -577,35 +666,35 @@ export default function App() {
           </motion.div>
 
           <div className="relative justify-self-center lg:justify-self-end">
-            <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full border-2 border-[#00ff9d]/30 overflow-hidden group">
+            <div className="relative w-52 h-52 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-full border-2 border-[#00ff9d]/30 overflow-hidden group">
               <div className="scan-line" />
               <img
                 src={profileImg}
                 alt="Adam Monir"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                className="w-full h-full object-cover can-hover:grayscale can-hover:group-hover:grayscale-0 transition-all duration-700"
               />
             </div>
           </div>
         </section>
 
         {/* ── STATS (original "about" section) ── */}
-        <section className="py-20 grid md:grid-cols-3 gap-8 text-center">
-          <div className="p-8 bg-[#111] rounded-2xl border border-white/5">
-            <div className="text-[#00ff9d] text-4xl font-black mb-2">25+</div>
+        <section className="py-12 sm:py-16 lg:py-20 grid gap-4 sm:grid-cols-3 sm:gap-5 lg:gap-8 text-center">
+          <div className="p-5 sm:p-6 lg:p-8 bg-[#111] rounded-2xl border border-white/5">
+            <div className="text-[#00ff9d] text-3xl sm:text-4xl font-black mb-2">25+</div>
             <div className="text-gray-500 uppercase text-xs tracking-widest font-mono">Certifications</div>
           </div>
-          <div className="p-8 bg-[#111] rounded-2xl border border-white/5">
-            <div className="text-[#00ff9d] text-4xl font-black mb-2">AI</div>
+          <div className="p-5 sm:p-6 lg:p-8 bg-[#111] rounded-2xl border border-white/5">
+            <div className="text-[#00ff9d] text-3xl sm:text-4xl font-black mb-2">AI</div>
             <div className="text-gray-500 uppercase text-xs tracking-widest font-mono">Major Concentration</div>
           </div>
-          <div className="p-8 bg-[#111] rounded-2xl border border-white/5">
-            <div className="text-[#00ff9d] text-4xl font-black mb-2">3+</div>
+          <div className="p-5 sm:p-6 lg:p-8 bg-[#111] rounded-2xl border border-white/5">
+            <div className="text-[#00ff9d] text-3xl sm:text-4xl font-black mb-2">3+</div>
             <div className="text-gray-500 uppercase text-xs tracking-widest font-mono">Years Experience</div>
           </div>
         </section>
 
         {/* ── ABOUT ME ── */}
-        <section id="about" className="py-20">
+        <section id="about" className="py-12 sm:py-16 lg:py-20">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -614,13 +703,13 @@ export default function App() {
           >
             <SectionHeader icon={Brain}>About Me</SectionHeader>
 
-            <p className="text-gray-400 text-lg leading-relaxed max-w-3xl mb-12">
+            <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-3xl mb-8 sm:mb-12">
               {profile.about.paragraph.lead}
               <span className="text-white font-bold">{profile.about.paragraph.highlight}</span>
               {profile.about.paragraph.tail}
             </p>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
               {profile.about.infoCards.map(({ icon, label, value }) => {
                 const Icon = ICONS[icon];
                 return (
@@ -628,7 +717,7 @@ export default function App() {
                     key={label}
                     whileHover={{ y: -6, scale: 1.02, boxShadow: '0 0 25px rgba(0,255,157,0.08)' }}
                     transition={SNAP}
-                    className="p-6 bg-[#111] border border-white/5 rounded-2xl"
+                    className="p-5 sm:p-6 bg-[#111] border border-white/5 rounded-2xl"
                   >
                     <motion.div whileHover={{ rotate: 12, scale: 1.1 }} transition={SNAP} className="inline-block mb-3">
                       {Icon && <Icon className="text-[#00ff9d]" size={22} />}
@@ -643,9 +732,9 @@ export default function App() {
         </section>
 
         {/* ── SKILLS BENTO (unchanged) ── */}
-        <section id="skills" className="py-20">
+        <section id="skills" className="py-12 sm:py-16 lg:py-20">
           <SectionHeader icon={Terminal}>Technical Domains</SectionHeader>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid gap-4 sm:gap-5 md:grid-cols-3 lg:gap-6">
             <SkillBox icon={Brain} title="Artificial Intelligence" items="NLP, Computer Vision, Machine Learning, TensorFlow, Deep Learning." />
             <SkillBox icon={Code2} title="Software Engineering" items="Java (OOP), Python, C, Agile/Scrum, Software Quality Engineering." />
             <SkillCard icon={Database} title="Data & Systems" items="SQL (IBM/Meta), Relational Databases, Unix, Linear Circuits." />
@@ -653,7 +742,7 @@ export default function App() {
         </section>
 
         {/* ── TECHNICAL EXPERTISE ── */}
-        <section id="expertise" className="py-20">
+        <section id="expertise" className="py-12 sm:py-16 lg:py-20">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -661,7 +750,7 @@ export default function App() {
             transition={{ duration: 0.6 }}
           >
             <SectionHeader icon={Wrench}>Technical Expertise</SectionHeader>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
               {expertiseCategories.map(({ icon: Icon, title, skills }, idx) => (
                 <motion.div
                   key={title}
@@ -670,9 +759,9 @@ export default function App() {
                   viewport={{ once: true }}
                   whileHover={{ y: -6, scale: 1.02, boxShadow: '0 0 25px rgba(0,255,157,0.08)' }}
                   transition={{ ...SNAP, delay: idx * 0.08 }}
-                  className="p-8 bg-[#111] border border-white/5 rounded-3xl"
+                  className="p-5 sm:p-6 lg:p-8 bg-[#111] border border-white/5 rounded-3xl"
                 >
-                  <motion.div whileHover={{ rotate: 12, scale: 1.1 }} transition={SNAP} className="inline-block mb-5">
+                  <motion.div whileHover={{ rotate: 12, scale: 1.1 }} transition={SNAP} className="inline-block mb-4 sm:mb-5">
                     <Icon className="text-[#00ff9d]" size={28} />
                   </motion.div>
                   <h4 className="text-lg font-bold mb-4">{title}</h4>
@@ -690,7 +779,7 @@ export default function App() {
         </section>
 
         {/* ── EXPERIENCE ── */}
-        <section id="experience" className="py-20">
+        <section id="experience" className="py-12 sm:py-16 lg:py-20">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -701,9 +790,9 @@ export default function App() {
 
             <div className="relative">
               {/* vertical line */}
-              <div className="absolute left-[11px] top-0 bottom-0 w-px bg-[#00ff9d]/20" />
+              <div className="absolute left-[9px] sm:left-[11px] top-0 bottom-0 w-px bg-[#00ff9d]/20" />
 
-              <div className="flex flex-col gap-10">
+              <div className="flex flex-col gap-6 sm:gap-8 lg:gap-10">
                 {experiences.map((exp, i) => (
                   <motion.div
                     key={i}
@@ -711,13 +800,13 @@ export default function App() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ ...SNAP, delay: i * 0.15 }}
-                    className="relative pl-10"
+                    className="relative pl-7 sm:pl-10"
                   >
                     {/* dot — framer motion pulse */}
                     <motion.div
                       whileHover={{ scale: 1.4 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                      className="absolute left-0 top-1.5 w-[22px] h-[22px] rounded-full border-2 border-[#00ff9d] bg-[#080808] flex items-center justify-center"
+                      className="absolute left-0 top-1.5 w-[18px] h-[18px] sm:w-[22px] sm:h-[22px] rounded-full border-2 border-[#00ff9d] bg-[#080808] flex items-center justify-center"
                     >
                       <div className="w-2 h-2 rounded-full bg-[#00ff9d]" />
                     </motion.div>
@@ -725,17 +814,17 @@ export default function App() {
                     <motion.div
                       whileHover={{ y: -4, boxShadow: '0 0 25px rgba(0,255,157,0.08)' }}
                       transition={SNAP}
-                      className="p-6 bg-[#111] border border-white/5 rounded-2xl"
+                      className="p-4 sm:p-5 lg:p-6 bg-[#111] border border-white/5 rounded-2xl"
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
-                        <div>
-                          <h4 className="text-lg font-bold text-white">{exp.role}</h4>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Building2 size={13} className="text-[#00ff9d]" />
-                            <span className="text-xs text-gray-400 font-mono">{exp.company}</span>
+                      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-2 sm:gap-3 mb-2">
+                        <div className="min-w-0">
+                          <h4 className="text-base sm:text-lg font-bold text-white leading-snug">{exp.role}</h4>
+                          <div className="flex items-start gap-2 mt-1 min-w-0">
+                            <Building2 size={13} className="text-[#00ff9d] shrink-0 mt-[3px]" />
+                            <span className="text-xs text-gray-400 font-mono break-words">{exp.company}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] bg-[#00ff9d]/10 border border-[#00ff9d]/20 px-3 py-1.5 rounded-full">
+                        <div className="self-start shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] bg-[#00ff9d]/10 border border-[#00ff9d]/20 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full">
                           <Calendar size={11} />
                           {exp.period}
                         </div>
@@ -750,7 +839,7 @@ export default function App() {
         </section>
 
         {/* ── PROJECTS ── */}
-        <section id="projects" className="py-20">
+        <section id="projects" className="py-12 sm:py-16 lg:py-20">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -760,12 +849,12 @@ export default function App() {
             <SectionHeader icon={Code2}>Projects</SectionHeader>
 
             {/* Filter tabs */}
-            <div className="flex flex-wrap gap-3 mb-10">
+            <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8 lg:mb-10">
               {PROJECT_CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setActiveFilter(cat)}
-                  className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-widest transition-all border ${
+                  className={`px-4 py-2.5 sm:py-2 rounded-full text-xs font-mono uppercase tracking-widest transition-all border ${
                     activeFilter === cat
                       ? 'bg-[#00ff9d] text-black border-[#00ff9d] font-bold'
                       : 'border-white/10 text-gray-400 hover:border-[#00ff9d]/50 hover:text-[#00ff9d]'
@@ -776,7 +865,7 @@ export default function App() {
               ))}
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
               <AnimatePresence>
                 {filteredProjects.map((proj, i) => (
                   <motion.div
@@ -787,7 +876,15 @@ export default function App() {
                     whileHover={{ y: -6, scale: 1.02, boxShadow: '0 0 25px rgba(0,255,157,0.08)' }}
                     transition={{ ...SNAP, delay: i * 0.05 }}
                     onClick={() => setSelectedProject(proj)}
-                    className="group p-6 bg-[#111] border border-white/5 rounded-2xl flex flex-col cursor-pointer"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedProject(proj);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="group p-5 sm:p-6 bg-[#111] border border-white/5 rounded-2xl flex flex-col cursor-pointer"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <span className="text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] bg-[#00ff9d]/10 border border-[#00ff9d]/20 px-2 py-1 rounded">
@@ -817,7 +914,7 @@ export default function App() {
                         </span>
                       ))}
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] mt-5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest text-[#00ff9d] mt-4 sm:mt-5 opacity-70 can-hover:opacity-0 can-hover:group-hover:opacity-100 transition-opacity">
                       Read more <ChevronRight size={12} />
                     </div>
                   </motion.div>
@@ -828,7 +925,7 @@ export default function App() {
         </section>
 
         {/* ── CERTIFICATIONS ── */}
-        <section id="certifications" className="py-20">
+        <section id="certifications" className="py-12 sm:py-16 lg:py-20">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -838,12 +935,12 @@ export default function App() {
             <SectionHeader icon={Award}>Verified Credentials</SectionHeader>
 
             {/* Filter bar */}
-            <div className="flex flex-wrap gap-2 mb-8">
+            <div className="flex flex-wrap gap-2 mb-6 sm:mb-8">
               {CERT_FILTER_CATS.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setCertFilter(cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-mono uppercase tracking-widest transition-all border ${
+                  className={`px-3 py-2 sm:py-1.5 rounded-full text-xs font-mono uppercase tracking-widest transition-all border ${
                     certFilter === cat
                       ? 'bg-[#00ff9d] text-black border-[#00ff9d] font-bold'
                       : 'border-white/10 text-gray-400 hover:border-[#00ff9d]/50 hover:text-[#00ff9d]'
@@ -856,7 +953,7 @@ export default function App() {
 
             {/* Timeline list */}
             <div className="border border-white/5 rounded-2xl overflow-hidden">
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {filteredCerts.map((c, i) => (
                   <motion.div
                     key={`${c.provider}-${c.n}`}
@@ -865,17 +962,17 @@ export default function App() {
                     exit={{ opacity: 0, x: 10 }}
                     whileHover={{ x: 8 }}
                     transition={SNAP}
-                    className={`flex flex-wrap sm:flex-nowrap items-center gap-4 px-5 py-4 cursor-default ${
+                    className={`flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1.5 px-4 sm:px-5 py-3.5 sm:py-4 cursor-default ${
                       i !== filteredCerts.length - 1 ? 'border-b border-white/5' : ''
                     }`}
                   >
-                    <span className="text-[10px] bg-[#00ff9d]/10 text-[#00ff9d] border border-[#00ff9d]/20 px-2 py-1 rounded uppercase shrink-0 w-16 text-center">
+                    <span className="order-1 sm:order-none text-[10px] bg-[#00ff9d]/10 text-[#00ff9d] border border-[#00ff9d]/20 px-2 py-1 rounded uppercase shrink-0 w-14 sm:w-16 text-center">
                       {c.cat}
                     </span>
-                    <span className="text-base font-bold flex-1 min-w-0">{c.n}</span>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <span className="text-sm text-gray-400 font-mono hidden sm:block">{c.provider}</span>
-                      <span className="text-xs text-gray-500 font-mono">{c.date}</span>
+                    <span className="order-3 sm:order-none text-sm sm:text-base font-bold w-full sm:w-auto sm:flex-1 sm:min-w-0">{c.n}</span>
+                    <div className="order-2 sm:order-none flex items-center gap-2 sm:gap-4 min-w-0 ml-auto sm:ml-0 sm:shrink-0">
+                      <span className="text-[11px] sm:text-sm text-gray-400 font-mono truncate">{c.provider}</span>
+                      <span className="text-[11px] sm:text-xs text-gray-500 font-mono shrink-0">{c.date}</span>
                     </div>
                   </motion.div>
                 ))}
@@ -891,7 +988,7 @@ export default function App() {
         </section>
 
         {/* ── GET IN TOUCH ── */}
-        <footer id="contact" className="py-20 border-t border-white/5">
+        <footer id="contact" className="py-12 sm:py-16 lg:py-20 border-t border-white/5">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -900,13 +997,13 @@ export default function App() {
           >
             <SectionHeader icon={Mail}>Get In Touch</SectionHeader>
 
-            <p className="text-gray-400 text-lg leading-relaxed max-w-2xl mb-8">
+            <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-2xl mb-6 sm:mb-8">
               I'm always open to discussing new opportunities, collaborations, or just having a chat
               about AI and technology. Feel free to reach out via any of the channels below!
             </p>
 
             {/* Language badges */}
-            <div className="flex flex-wrap gap-3 mb-10">
+            <div className="flex flex-wrap gap-2 sm:gap-3 mb-8 sm:mb-10">
               <span className="flex items-center gap-2 text-xs font-mono text-[#00ff9d] border border-[#00ff9d]/30 bg-[#00ff9d]/5 px-4 py-1 rounded-full">
                 🇪🇬 Arabic — Native
               </span>
@@ -916,7 +1013,7 @@ export default function App() {
             </div>
 
             {/* Contact cards 2x2 */}
-            <div className="grid sm:grid-cols-2 gap-5 mb-14">
+            <div className="grid sm:grid-cols-2 gap-4 sm:gap-5 mb-10 sm:mb-14">
               {[
                 { href: 'mailto:adam.mounir.business0@gmail.com', icon: Mail, label: 'Email', value: 'adam.mounir.business0@gmail.com', external: false },
                 { href: null, icon: MapPin, label: 'Location', value: 'Alexandria, Egypt', external: false },
@@ -930,14 +1027,14 @@ export default function App() {
                   className="bg-[#111] border border-white/5 rounded-2xl overflow-hidden"
                 >
                   {href ? (
-                    <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined} className="flex items-center gap-5 p-6">
-                      <div className="p-3 bg-[#00ff9d]/10 rounded-xl shrink-0"><Icon className="text-[#00ff9d]" size={22} /></div>
-                      <div><div className="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-0.5">{label}</div><div className="text-sm text-white font-medium">{value}</div></div>
+                    <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined} className="flex items-center gap-4 sm:gap-5 p-4 sm:p-6">
+                      <div className="p-2.5 sm:p-3 bg-[#00ff9d]/10 rounded-xl shrink-0"><Icon className="text-[#00ff9d]" size={22} /></div>
+                      <div className="min-w-0 flex-1"><div className="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-0.5">{label}</div><div className="text-[13px] sm:text-sm text-white font-medium break-words">{value}</div></div>
                     </a>
                   ) : (
-                    <div className="flex items-center gap-5 p-6">
-                      <div className="p-3 bg-[#00ff9d]/10 rounded-xl shrink-0"><Icon className="text-[#00ff9d]" size={22} /></div>
-                      <div><div className="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-0.5">{label}</div><div className="text-sm text-white font-medium">{value}</div></div>
+                    <div className="flex items-center gap-4 sm:gap-5 p-4 sm:p-6">
+                      <div className="p-2.5 sm:p-3 bg-[#00ff9d]/10 rounded-xl shrink-0"><Icon className="text-[#00ff9d]" size={22} /></div>
+                      <div className="min-w-0 flex-1"><div className="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-0.5">{label}</div><div className="text-[13px] sm:text-sm text-white font-medium break-words">{value}</div></div>
                     </div>
                   )}
                 </motion.div>
@@ -945,18 +1042,18 @@ export default function App() {
             </div>
 
             {/* Footer bar */}
-            <div className="border-t border-white/5 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-              <p className="text-gray-600 text-xs font-mono">
+            <div className="border-t border-white/5 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <p className="text-gray-600 text-xs font-mono text-center sm:text-left">
                 © {new Date().getFullYear()} Adam Rany Kamaleldin — All rights reserved.
               </p>
-              <div className="flex gap-5">
-                <a href="mailto:adam.mounir.business0@gmail.com" className="text-gray-500 hover:text-[#00ff9d] transition-colors">
+              <div className="flex gap-3">
+                <a href="mailto:adam.mounir.business0@gmail.com" className="p-2 text-gray-500 hover:text-[#00ff9d] transition-colors">
                   <Mail size={18} />
                 </a>
-                <a href="https://github.com/Adam-Monir" className="text-gray-500 hover:text-[#00ff9d] transition-colors">
+                <a href="https://github.com/Adam-Monir" className="p-2 text-gray-500 hover:text-[#00ff9d] transition-colors">
                   <Github size={18} />
                 </a>
-                <a href="https://www.linkedin.com/in/adam-kamal-11ab41349/" className="text-gray-500 hover:text-[#00ff9d] transition-colors">
+                <a href="https://www.linkedin.com/in/adam-kamal-11ab41349/" className="p-2 text-gray-500 hover:text-[#00ff9d] transition-colors">
                   <Linkedin size={18} />
                 </a>
               </div>

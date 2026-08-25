@@ -1,7 +1,21 @@
 @import "tailwindcss";
 
-html { scroll-behavior: smooth; }
+/* Applies only on devices that can actually hover (Tailwind v4 already scopes
+   `hover:` this way; this lets us scope base styles the same). */
+@custom-variant can-hover (@media (hover: hover) and (pointer: fine));
+
+/* Must stay in sync with the nav height in App.jsx (h-14 / lg:h-16). */
+:root { --nav-h: 3.5rem; }
+@media (width >= 1024px) { :root { --nav-h: 4rem; } }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%; /* stop iOS Safari inflating text in landscape */
+}
 body { background-color: #080808; color: white; margin: 0; }
+
+/* Keep anchor targets clear of the fixed navbar. */
+section[id], footer[id] { scroll-margin-top: calc(var(--nav-h) + 1rem); }
 
 .scan-line {
   position: absolute;
@@ -14,20 +28,46 @@ body { background-color: #080808; color: white; margin: 0; }
 
 @keyframes scan { 0% { top: -100%; } 100% { top: 100%; } }
 
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .scan-line { animation: none; opacity: 0.35; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Project modal markdown ───────────────────────────────
+   Mobile-first: the >= 640px values are the original desktop sizes. */
+.markdown-body { font-size: 0.9375rem; overflow-wrap: break-word; }
+@media (width >= 640px) { .markdown-body { font-size: 1rem; } }
+
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
 .markdown-body h4 {
   color: white;
   font-weight: 700;
-  margin: 1.6em 0 0.6em;
+  margin: 1.2em 0 0.5em;
   line-height: 1.3;
 }
 
-.markdown-body h1 { font-size: 1.6rem; }
-.markdown-body h2 { font-size: 1.35rem; }
-.markdown-body h3 { font-size: 1.15rem; }
-.markdown-body h4 { font-size: 1rem; }
+.markdown-body h1 { font-size: 1.25rem; }
+.markdown-body h2 { font-size: 1.1rem; }
+.markdown-body h3 { font-size: 1rem; }
+.markdown-body h4 { font-size: 0.9375rem; }
+
+@media (width >= 640px) {
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4 { margin: 1.6em 0 0.6em; }
+  .markdown-body h1 { font-size: 1.6rem; }
+  .markdown-body h2 { font-size: 1.35rem; }
+  .markdown-body h3 { font-size: 1.15rem; }
+  .markdown-body h4 { font-size: 1rem; }
+}
 
 .markdown-body h2 {
   display: flex;
@@ -42,6 +82,7 @@ body { background-color: #080808; color: white; margin: 0; }
   background: #00ff9d;
   border-radius: 2px;
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .markdown-body p {
@@ -55,8 +96,13 @@ body { background-color: #080808; color: white; margin: 0; }
   color: #9ca3af;
   line-height: 1.75;
   margin: 0.8em 0;
-  padding-left: 1.4em;
+  padding-left: 1.15em;
   list-style: disc;
+}
+
+@media (width >= 640px) {
+  .markdown-body ul,
+  .markdown-body ol { padding-left: 1.4em; }
 }
 
 .markdown-body ol { list-style: decimal; }
@@ -92,3 +138,51 @@ body { background-color: #080808; color: white; margin: 0; }
 .markdown-body strong {
   color: white;
 }
+
+/* Defensive: no .mdx uses these today, but remark-gfm is enabled. */
+.markdown-body pre {
+  background: rgba(0, 255, 157, 0.05);
+  border: 1px solid rgba(0, 255, 157, 0.15);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  margin: 1em 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  overflow-wrap: normal;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Without this the inline-code pill above paints every fenced block. */
+.markdown-body pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+  color: #d1d5db;
+  white-space: pre;
+}
+
+.markdown-body table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin: 1em 0;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.markdown-body th { color: white; background: rgba(255, 255, 255, 0.03); }
+
+.markdown-body img { max-width: 100%; height: auto; display: block; border-radius: 8px; }
+
+.markdown-body hr { border: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 1.5em 0; }
